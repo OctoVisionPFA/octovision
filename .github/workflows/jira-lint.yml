@@ -1,0 +1,16 @@
+name: "Jira Issue Key Validator"
+on:
+  pull_request:
+    types: [opened, edited, synchronize]
+jobs:
+  check-title:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate OC Key
+        uses: amannn/action-semantic-pull-request@v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          # This ensures PR titles start with 'OC-'
+          subjectPattern: ^OC-\d+.*$
+          subjectPatternError: "Your PR title must start with 'OC-XX:' to link with Jira."
