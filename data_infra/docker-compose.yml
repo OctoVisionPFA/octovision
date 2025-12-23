@@ -1,0 +1,50 @@
+services:
+  # Metadata Storage
+  mongodb:
+    image: mongo:6.0
+    container_name: octo_mongo
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - octo_net
+
+  # Hadoop NameNode (Master)
+  namenode:
+    image: bde2020/hadoop-namenode:2.0.0-hadoop3.2.1-java8
+    container_name: octo_namenode
+    restart: always
+    ports:
+      - "9870:9870"
+      - "9000:9000"
+    env_file:
+      - ./hadoop.env
+    volumes:
+      - namenode_data:/hadoop/dfs/name
+    networks:
+      - octo_net
+
+  # Hadoop DataNode (Worker)
+  datanode:
+    image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
+    container_name: octo_datanode
+    restart: always
+    env_file:
+      - ./hadoop.env
+    depends_on:
+      - namenode
+    volumes:
+      - datanode_data:/hadoop/dfs/data
+    networks:
+      - octo_net
+
+networks:
+  octo_net:
+    driver: bridge
+
+volumes:
+  mongo_data:
+  namenode_data:
+  datanode_data:

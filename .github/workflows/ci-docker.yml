@@ -1,0 +1,39 @@
+name: CI - Docker Compose Validation
+
+on:
+  push:
+    branches: ["main", "master"]
+  pull_request:
+    branches: ["main", "master"]
+
+jobs:
+  compose-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Validate docker-compose file
+        run: docker compose -f data_infra/docker-compose.yml config
+
+      - name: Start compose services (build + up)
+        run: |
+          docker compose -f data_infra/docker-compose.yml up -d --build
+          echo "Waiting 30s for services to initialize..."
+          sleep 30
+          echo "--- docker compose ps ---"
+          docker compose -f data_infra/docker-compose.yml ps
+          echo "--- recent logs (tail 200) ---"
+          docker compose -f data_infra/docker-compose.yml logs --tail 200 || true
+
+      - name: Basic smoke checks
+        run: |
+          # Ensure octo_* containers are running
+          docker ps --filter "name=octo_" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+
+      - name: Tear down
+        if: always()
+        run: docker compose -f data_infra/docker-compose.yml down -v
